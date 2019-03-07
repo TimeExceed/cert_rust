@@ -1,0 +1,608 @@
+\documentclass[lualatex,utf8]{beamer}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{luacode}
+\usepackage{colortbl}
+\usepackage{booktabs}
+\usepackage{tabu}
+\usepackage{minted}
+
+\setbeameroption{show notes}
+%\setbeameroption{hide notes}
+\usetheme{Madrid}
+\setminted{autogobble,fontsize=\footnotesize}%fontfamily=Inconsolata,
+
+\title[Embedded Rust]{Rust in Embedded Systems}
+  \author{Taoda}
+  \institute{YITU tech}
+  \date{Mar\ 2019}
+
+\renewcommand{\emph}{\textbf}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Outline}
+  \tableofcontents
+\end{frame}
+
+
+\section{Why Rust Is A Candidate for Embedded Systems}
+
+\AtBeginSection[]
+{
+\begin{frame}<beamer>
+  \frametitle{Outline}
+  \tableofcontents[currentsection,subsubsectionstyle=show/show/show/shaded]
+\end{frame}
+}
+
+\begin{frame}
+  \frametitle{Why Rust Is Suitable for Embedded Systems}
+  \begin{block}{On embedded systems}
+    \begin{tabu}{*4{X[c]}}
+      \rowcolor{black!40}
+      & CA320 & N-Box & H-Box \\
+      \taburowcolors 2{black!10 .. black!10}
+      CPU & Hi3516av200 & Nvidia TX2 & Hi3559a \\
+      \taburowcolors 2{black!20 .. black!20}
+      RAM & 1GB & 8GB & 4GB \\
+      \taburowcolors 2{black!10 .. black!10}
+      Flash & 16MB & 32GB & 16GB \\
+    \end{tabu}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Why Rust Is Suitable for Embedded Systems}
+  \begin{block}{My requirements}
+    \begin{enumerate}
+    \item \emph{ARM support}
+    \item \emph{Linux support}
+    \item JiTeng works on C/C++, so, \emph{easy interoperability to C/C++}
+    \item I work on ``business level'', so, I care about both \emph{productivity} and \emph{safety}.
+      \begin{itemize}
+      \item e.g., how easy to write multi-threaded HTTP servers and clients without fear.
+      \item I don't want to gdb core dumps in the field.
+      \end{itemize}
+    \item High \emph{performance}, low \emph{memory} footprint and \emph{disk} usage.
+      \begin{itemize}
+      \item GC free
+      \end{itemize}
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Why Rust Is Suitable for Embedded Systems}
+  \begin{exampleblock}{Candidates}
+    \begin{itemize}
+    \item Python/Ruby/NodeJS/PHP/Erlang, out! (performance)
+    \item All languages on JVM, out! (GC \& disk usage \& ARM support)
+    \end{itemize}
+    I want a ``real'' system's language.
+  \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Why Rust Is Suitable for Embedded Systems}
+  \begin{block}{Candidates}
+    \begin{tabu}{*4{X[c]}}
+      \rowcolor{black!40}
+      Language & TIOBE-201902 & GitHub-18 & GitHub Growth 18' \\
+      \taburowcolors 2{black!10 .. black!10}
+      C & 2 & 9 & \\
+      \taburowcolors 2{black!20 .. black!20}
+      C++ & 4 & 5 & \\
+      \taburowcolors 2{black!10 .. black!10}
+      Assembly & 11 & & \\
+      \taburowcolors 2{black!20 .. black!20}
+      Go & 18 & & 7(1.5x)\\
+      \taburowcolors 2{black!10 .. black!10}
+      Rust & 37 & & 5(1.7x)\\
+    \end{tabu}
+  \end{block}
+\end{frame}
+
+\section{Language Battles}
+\subsection{On ARM support}
+
+\begin{frame}
+  \frametitle{On ARM support \& interoperability to C/C++}
+  \begin{block}{Workflow about compiling a Rust program}
+    \begin{center}
+      \includegraphics{fig/rust_workflow.pdf}
+    \end{center}
+    \begin{itemize}
+    \item ARM support: as good as Clang
+    \item Interoperability to C/C++: binary compatible, extremely thin FFI
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\subsection{On interoperability to C/C++}
+
+\begin{frame}[fragile]
+  \frametitle{On interoperability to C/C++}
+  \begin{exampleblock}{A function in C}
+    \begin{minted}{rust}
+      snappy_status snappy_compress(const char* input,
+                                    size_t input_length,
+                                    char* compressed,
+                                    size_t* compressed_length);
+    \end{minted}
+  \end{exampleblock}
+  \begin{block}{Counterpart in Rust}
+    \begin{minted}{rust}
+      extern crate libc;
+      use libc::{c_int, size_t};
+
+      #[link(name = "snappy")]
+      extern {
+          fn snappy_compress(input: *const u8,
+                             input_length: size_t,
+                             compressed: *mut u8,
+                             compressed_length: *mut size_t) -> c_int;
+      }
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\subsection{On performance \& memory footprint}
+
+\begin{frame}
+  \frametitle{On performance \& memory footprint}
+  \begin{block}{The Computer Language Benchmarks Game}
+    \begin{center}
+      \includegraphics{fig/benchmark.pdf}
+    \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On performance \& memory footprint}
+  \begin{block}{Conclusions}
+    \begin{itemize}
+    \item Rust runs as fast as C/C++, 2-4x faster than Go.
+    \item Rust costs as many memory as C/C++, 2-4x smaller than Go.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\subsection{On safety}
+
+\begin{frame}
+  \frametitle{On safety}
+  \begin{block}{Lessons learnt from C++}
+    \begin{itemize}
+    \item Object ownership (memory leak \& double-free)
+    \item Object lifetime (dangling pointer dereference)
+    \item Dangerous pointer arithmetic (buffer overflow)
+    \item Multiple threads access a same object, and at least one of them writes. (race condition)
+    \end{itemize}
+  \end{block}
+  \begin{exampleblock}{The C++ way}
+    \begin{itemize}
+    \item Language provides tools, such as move semantics, std::unique\_ptr, ...
+    \item Programmers wisely adopt these tools as rules of discipline.
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On safety}
+  \begin{alertblock}{a leaky example}
+    \begin{minted}{cpp}
+      void funcA(T&& obj)
+      {
+          std::unique_ptr<T> aDeleter(new T(std::move(obj)));
+          ThreadPool::TaskPtr pHandlingTask;
+          pHandlingTask = boost::make_shared<ThreadPool::Task>(
+              boost::bind(&funcB, aDeleter.get()));
+          if (...) {
+              mThreadPool.Submit(pHandlingTask);
+          }
+          aDeleter.release();
+      }
+    \end{minted}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On safety}
+  \begin{block}{The Rust way}
+    \begin{itemize}
+    \item Ownership
+    \item Borrowing checking
+    \item Lifetime
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On safety}
+  \begin{alertblock}{Ownership}
+    \begin{minted}[frame=single]{rust}
+      let s1 = String::from("hello");
+      let s2 = s1;
+
+      println!("{}, world!", s1);
+    \end{minted}
+    \begin{minted}[frame=single]{text}
+      error[E0382]: use of moved value: `s1`
+       --> src/main.rs:5:28
+        |
+      3 |     let s2 = s1;
+        |         -- value moved here
+      4 |
+      5 |     println!("{}, world!", s1);
+        |                            ^^ value used here after move
+        |
+        = note: move occurs because `s1` has type `std::string::String`, which
+        does not implement the `Copy` trait
+    \end{minted}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On safety}
+  \begin{block}{Rule of Borrowing}
+    At any time, you can have, to a same object,
+    \begin{itemize}
+    \item either one mutable reference
+    \item or any number of immutable references
+    \end{itemize}
+    exclusively.
+  \end{block}
+  \begin{alertblock}{~}
+    \begin{minted}{rust}
+      let mut s = String::from("hello");
+      let r1 = &s; // no problem
+      let r2 = &s; // no problem
+      let r3 = &mut s; // BIG PROBLEM
+      println!("{}, {}, and {}", r1, r2, r3);
+    \end{minted}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On safety}
+  \begin{block}{Lifetime}
+    An intuitive idea: any reference must live shorter than the lifetime of the object to which it references.
+  \end{block}
+  \begin{alertblock}{~}
+    \begin{minted}{rust}
+      fn f() -> &str {
+        let result = String::from("really long string");
+        result.as_str()
+      }
+    \end{minted}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On safety}
+  \begin{alertblock}{But lifetime is a little bit complex}
+    \begin{minted}[frame=single]{rust}
+      fn longest(x: &str, y: &str) -> &str {
+        if x.len() > y.len() {
+          x
+        } else {
+          y
+        }
+      }
+    \end{minted}
+    \begin{minted}[frame=single]{text}
+      error[E0106]: missing lifetime specifier
+       --> src/main.rs:1:33
+        |
+      1 | fn longest(x: &str, y: &str) -> &str {
+        |                                 ^ expected lifetime parameter
+        |
+        = help: this function's return type contains a borrowed value, but
+        the signature does not say whether it is borrowed from `x` or `y`
+    \end{minted}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On safety}
+  \begin{exampleblock}{Lifetime annotation}
+    \begin{minted}[frame=single]{rust}
+      fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+        if x.len() > y.len() {
+          x
+        } else {
+          y
+        }
+      }
+    \end{minted}
+    This function signature now tells Rust that for some lifetime \mintinline{rust}|'a|,
+    \begin{itemize}
+    \item both of parameters live at least as long as lifetime \mintinline{rust}|'a|;
+    \item also the returned string slice will live at least as long as lifetime \mintinline{rust}|'a|.
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+\subsection{On productivity}
+
+\begin{frame}
+  \frametitle{On productivity}
+  \begin{block}{What is productivity in software development?}
+    My opinions: the speed of delivering reliable features.
+    \begin{enumerate}
+    \item Avoid bugs in coding $>$ Find bugs in testing $>$ Fixes bugs in the fields.
+      \begin{itemize}
+      \item Which implies, safety really matters.
+      \end{itemize}
+    \item Modeling the nature in a nature way.
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On productivity}
+  \begin{block}{Comparisons on code lines}
+    For a TCP echo server:
+    \begin{itemize}
+    \item Rust +tokio: 22 LoC
+    \item C++ +boost::asio: 89 LoC
+    \item Java +netty: 48 LoC
+    \item Python3 (asyncio): 19 LoC
+    \item Go: 39 LoC
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On productivity}
+  \begin{block}{OOP}
+    OOP tries to shot two birds by one bullet:
+    \begin{itemize}
+    \item as a tool for modeling
+    \item as a tool for reusing codes
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On productivity}
+  \begin{block}{Platonism OOP}
+    \begin{itemize}
+    \item a.k.a., subclassing
+    \item for modeling:
+      \begin{itemize}
+      \item Ducks are birds. Every bird can fly. So, ducks can fly.
+      \item What about a bird who cannot fly, e.g., ostrichs?
+      \end{itemize}
+    \item for reusing code
+      \begin{itemize}
+      \item diamond problem
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On productivity}
+  \begin{block}{Duck-typing OOP}
+    \begin{itemize}
+    \item a.k.a., interface-oriented programming
+    \item for modeling:
+      \begin{itemize}
+      \item Lib authors always doubt some interfaces are missing to declare.
+      \end{itemize}
+    \item for reusing code: no way
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On productivity}
+  \begin{block}{Trait impl in rust}
+    \begin{minted}{rust}
+      fn main() {
+        5.f();
+      }
+      pub trait T {
+        fn f(&self) -> ();
+      }
+      impl T for u64 {
+        fn f(&self) -> () {
+          println!("{}", self);
+        }
+      }
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On productivity: FP paradigm}
+  \begin{columns}[t]
+    \begin{column}{.45\textwidth}
+      \begin{block}{flawed code in Java}
+        \begin{minted}{java}
+          return a.f().g().h();
+        \end{minted}
+      \end{block}
+    \end{column}
+    \begin{column}{.45\textwidth}
+      \begin{block}<2>{fixed code in Java}
+        \begin{minted}{java}
+          B b = null;
+          if (a != null) {
+            b = a.f();
+          }
+          C c = null;
+          if (b != null) {
+            c = b.g();
+          }
+          D d = null;
+          if (c != null) {
+            d = c.h();
+          }
+          return d;
+        \end{minted}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On productivity: FP paradigm}
+  \begin{block}{FP way in Rust}
+    \begin{columns}
+      \begin{column}[t]{.45\textwidth}
+        \begin{minted}{rust}
+          struct A {}
+          impl A {
+              fn f(&self) -> Option<B> {...}
+          }
+          struct B {}
+          impl B {
+              fn g(&self) -> Option<C> {...}
+          }
+          struct C {}
+          impl C {
+              fn h(&self) -> Option<D> {...}
+          }
+          struct D {}
+        \end{minted}
+      \end{column}
+      \begin{column}[t]{.45\textwidth}
+        \begin{minted}{rust}
+          let d = Some(a)
+              .and_then(|x| x.f())
+              .and_then(|x| x.g())
+              .and_then(|x| x.h());
+        \end{minted}
+      \end{column}
+    \end{columns}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On productivity: meta programming}
+  \begin{block}{~}
+    \begin{itemize}
+    \item C macro is well-known dangerous.
+    \item C++ templating is strong but complex.
+    \item Rust macro is not so expressive but also much simpler.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{On productivity: meta programming}
+  \begin{block}{Rust macro example}
+    \begin{minted}{rust}
+      macro_rules! vec {
+        ( $( $x:expr ),* ) => {
+          {
+            let mut temp_vec = Vec::new();
+            $(
+              temp_vec.push($x);
+            )*
+            temp_vec
+          }
+        };
+      }
+
+      let v: Vec<u32> = vec![1, 2, 3];
+    \end{minted}
+  \end{block}
+\end{frame}
+
+\subsection{On learning curve \& labor supply}
+
+\begin{frame}
+  \frametitle{On labor supply}
+  \begin{block}{In the labor market,}
+    \begin{itemize}
+    \item Fact: there are few supply of Rust programmers.
+    \item Fact: there are a few supply of qualified C++ programmers.
+    \item Opinion: there is no easy way to distinguish qualified and unqualified C++ programmers.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On learning curve}
+  \begin{block}{My experience}
+    From newbie to being familiar with toy project experience,\\
+    which means, being able to work on real projects with google.
+    \begin{tabu}{*4{X[c]}}
+        \rowcolor{black!40}
+        Language & Learning & *MPost & testa \\
+        \taburowcolors 2{black!10 .. black!10}
+        C & 1 months & -- & -- \\
+        \taburowcolors 2{black!20 .. black!20}
+        Java & 1 months & 3 weeks & --\\
+        \taburowcolors 2{black!10 .. black!10}
+        C++ & 1 week & -- & 3 days\\
+        \taburowcolors 2{black!20 .. black!20}
+        Python & 3 days & 1 month & --\\
+        \taburowcolors 2{black!10 .. black!10}
+        Scala & 2 weeks & -- & --\\
+        \taburowcolors 2{black!20 .. black!20}
+        Erlang & 2 weeks & -- & 1 weeks\\
+        \taburowcolors 2{black!10 .. black!10}
+        Go & 1 day & -- & --\\
+        \taburowcolors 2{black!20 .. black!20}
+        Clojure & 1 months & -- & 1 week\\
+        \taburowcolors 2{black!10 .. black!10}
+        Lua & 3 days & 1 weeks & 1 night\\
+        \taburowcolors 2{black!20 .. black!20}
+        Rust & 1 week & -- & 2 nights\\
+    \end{tabu}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{On learning curve}
+  \begin{block}{What helps me in learning Rust?}
+    \begin{itemize}
+    \item system knowledges: compiling\&linking, stack\&heap, multithreading, async io
+    \item PL knowledges: OOP, FP
+    \end{itemize}
+    Which of the above doesn't a qualified C++ programmer need to know?
+  \end{block}
+\end{frame}
+
+\section{Conclusions}
+
+\begin{frame}
+  \frametitle{Conclusions}
+  \begin{block}{What I didn't say}
+    \begin{itemize}
+    \item JiTeng should engage Rust
+    \item server-app developers should engage Rust
+    \end{itemize}
+  \end{block}
+  \begin{block}{What I did say}
+    \begin{itemize}
+    \item Rust is a better C++.
+    \item If you are a ``business level'' developer and you care about CPU/memory, try Rust.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Adopted Companies}
+  \noindent
+  \includegraphics[width=\textwidth]{fig/sensetime.png}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \Huge
+    Thanks
+  \end{center}
+\end{frame}
+
+\end{document}

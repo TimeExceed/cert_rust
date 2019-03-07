@@ -1,2 +1,7 @@
 # -*- python -*-
 Import('env')
+figs = env.subDir('fig')
+
+pdf = env.Latex('rust_rights.tex')
+env.Depends(pdf, figs)
+env.Default(pdf)

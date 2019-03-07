@@ -1,0 +1,7 @@
+# -*- python -*-
+Import('env')
+
+srcs = env.Glob('*.lua')
+srcs.remove(env.File('luamp.lua'))
+pdfs = [env.luamp(x) for x in srcs]
+Return('pdfs')
